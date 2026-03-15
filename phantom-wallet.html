@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Phantom Wallet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg:        #1a1b23;
+    --bg2:       #232530;
+    --bg3:       #2c2d3a;
+    --surface:   #2a2b38;
+    --border:    rgba(255,255,255,0.07);
+    --purple:    #ab9ff2;
+    --purple2:   #9580ff;
+    --purple3:   #7c5cbf;
+    --green:     #4ade80;
+    --red:       #f87171;
+    --text:      #ffffff;
+    --text2:     rgba(255,255,255,0.55);
+    --text3:     rgba(255,255,255,0.3);
+    --font:      -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  }
+
+  html, body {
+    height: 100%; width: 100%;
+    background: #0f1016;
+    display: flex; justify-content: center; align-items: center;
+    font-family: var(--font);
+  }
+
+  /* iPhone frame */
+  .phone-frame {
+    width: 393px;
+    height: 852px;
+    background: var(--bg);
+    border-radius: 55px;
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 12px #1a1a1a,
+      0 0 0 14px #333,
+      0 30px 80px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Notch / Dynamic Island */
+  .dynamic-island {
+    position: absolute;
+    top: 12px; left: 50%; transform: translateX(-50%);
+    width: 126px; height: 37px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 100;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 59px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 28px 10px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .status-time {
+    font-size: 15px; font-weight: 600;
+    color: var(--text); letter-spacing: -0.3px;
+  }
+
+  .status-icons {
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .status-icons svg { fill: var(--text); }
+
+  /* ── SCREENS ── */
+  .screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+
+  /* ── HOME SCREEN ── */
+  .home-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .home-scroll::-webkit-scrollbar { display: none; }
+
+  /* Account header */
+  .account-header {
+    padding: 0 20px 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .account-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 14px 7px 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .account-pill:hover { background: var(--bg3); }
+
+  .account-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #9580ff 0%, #ff80bf 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white;
+  }
+
+  .account-name {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.2px;
+  }
+
+  .account-chevron {
+    font-size: 10px; color: var(--text2); margin-left: 2px;
+  }
+
+  .header-icons {
+    display: flex; gap: 8px;
+  }
+
+  .icon-btn {
+    width: 38px; height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.15s;
+    font-size: 16px;
+  }
+  .icon-btn:hover { background: var(--bg3); }
+
+  /* Balance section */
+  .balance-section {
+    padding: 28px 20px 24px;
+    text-align: center;
+  }
+
+  .balance-label {
+    font-size: 13px; color: var(--text2);
+    font-weight: 500; margin-bottom: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .balance-main {
+    font-size: 48px; font-weight: 700;
+    color: var(--text);
+    letter-spacing: -2px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: opacity 0.15s;
+  }
+  .balance-main:hover { opacity: 0.85; }
+
+  .balance-edit-icon {
+    font-size: 18px; opacity: 0.5;
+    transition: opacity 0.15s;
+  }
+  .balance-main:hover .balance-edit-icon { opacity: 1; }
+
+  .balance-change {
+    margin-top: 8px;
+    font-size: 14px; font-weight: 500;
+  }
+  .balance-change.positive { color: var(--green); }
+  .balance-change.negative { color: var(--red); }
+
+  /* Action buttons */
+  .action-buttons {
+    display: flex; justify-content: center; gap: 16px;
+    padding: 0 20px 28px;
+  }
+
+  .action-btn {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .action-btn:active { transform: scale(0.94); }
+
+  .action-icon {
+    width: 56px; height: 56px;
+    background: var(--purple2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(149,128,255,0.35);
+  }
+
+  .action-icon.outline {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+
+  .action-label {
+    font-size: 12px; font-weight: 500; color: var(--text2);
+    letter-spacing: 0.1px;
+  }
+
+  /* Section headings */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px 12px;
+  }
+
+  .section-title {
+    font-size: 13px; font-weight: 700;
+    color: var(--text2); letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .section-link {
+    font-size: 13px; color: var(--purple);
+    font-weight: 500; cursor: pointer;
+  }
+
+  /* Token list */
+  .token-list {
+    padding: 0 12px 12px;
+  }
+
+  .token-item {
+    display: flex; align-items: center;
+    padding: 12px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-bottom: 2px;
+  }
+  .token-item:hover { background: var(--surface); }
+
+  .token-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .token-chain-badge {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--purple2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    border: 2px solid var(--bg);
+  }
+
+  .token-info {
+    flex: 1; padding: 0 12px;
+  }
+
+  .token-name {
+    font-size: 15px; font-weight: 600;
+    color: var(--text); letter-spacing: -0.2px;
+  }
+
+  .token-amount {
+    font-size: 13px; color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .token-value-wrap {
+    text-align: right;
+  }
+
+  .token-value {
+    font-size: 15px; font-weight: 600;
+    color: var(--text); letter-spacing: -0.2px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    justify-content: flex-end;
+  }
+
+  .token-value .edit-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--purple);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .token-item:hover .token-value .edit-dot { opacity: 1; }
+
+  .token-change {
+    font-size: 12px; margin-top: 2px;
+  }
+  .token-change.positive { color: var(--green); }
+  .token-change.negative { color: var(--red); }
+
+  /* NFT strip */
+  .nft-strip {
+    display: flex; gap: 10px;
+    padding: 0 20px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nft-strip::-webkit-scrollbar { display: none; }
+
+  .nft-card {
+    flex-shrink: 0;
+    width: 90px; height: 90px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .nft-card:hover { transform: scale(1.05); }
+
+  /* Recent activity */
+  .activity-item {
+    display: flex; align-items: center;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .activity-item:hover { background: rgba(255,255,255,0.03); }
+
+  .activity-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  .activity-info {
+    flex: 1; padding: 0 12px;
+  }
+
+  .activity-title {
+    font-size: 15px; font-weight: 500; color: var(--text);
+  }
+
+  .activity-date {
+    font-size: 12px; color: var(--text3); margin-top: 2px;
+  }
+
+  .activity-amount {
+    font-size: 15px; font-weight: 600;
+  }
+  .activity-amount.positive { color: var(--green); }
+  .activity-amount.negative { color: var(--red); }
+
+  /* ── BOTTOM TAB BAR ── */
+  .tab-bar {
+    height: 83px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-start;
+    padding-top: 10px;
+    flex-shrink: 0;
+  }
+
+  .tab-item {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    padding: 4px 0;
+  }
+  .tab-item:hover { opacity: 0.8; }
+
+  .tab-icon {
+    font-size: 22px;
+    height: 24px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .tab-label {
+    font-size: 10px; font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+
+  .tab-item.active .tab-icon { color: var(--purple); }
+  .tab-item.active .tab-label { color: var(--purple); }
+  .tab-item:not(.active) .tab-icon { color: var(--text3); }
+  .tab-item:not(.active) .tab-label { color: var(--text3); }
+
+  .tab-indicator {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--purple);
+    position: absolute; bottom: 0;
+    opacity: 0;
+  }
+  .tab-item.active .tab-indicator { opacity: 1; }
+
+  /* ── MODALS ── */
+  .modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: none; flex-direction: column;
+    justify-content: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-sheet {
+    background: var(--bg2);
+    border-radius: 24px 24px 0 0;
+    padding: 12px 24px 40px;
+    animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  .modal-title {
+    font-size: 18px; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+    text-align: center;
+  }
+
+  .modal-subtitle {
+    font-size: 13px; color: var(--text2);
+    text-align: center; margin-bottom: 24px;
+  }
+
+  .edit-input-wrap {
+    position: relative; margin-bottom: 16px;
+  }
+
+  .edit-input-prefix {
+    position: absolute; left: 16px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px; font-weight: 600;
+    color: var(--text2);
+    pointer-events: none;
+  }
+
+  .edit-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 18px 18px 36px;
+    font-size: 20px; font-weight: 600;
+    color: var(--text);
+    font-family: var(--font);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .edit-input:focus { border-color: var(--purple2); }
+
+  .edit-tokens-list {
+    max-height: 280px; overflow-y: auto;
+    scrollbar-width: none;
+    margin-bottom: 16px;
+  }
+  .edit-tokens-list::-webkit-scrollbar { display: none; }
+
+  .edit-token-row {
+    display: flex; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .edit-token-row:last-child { border-bottom: none; }
+
+  .edit-token-icon { font-size: 24px; }
+
+  .edit-token-name {
+    flex: 1; font-size: 14px; font-weight: 500; color: var(--text);
+  }
+
+  .edit-token-input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 14px; font-weight: 600;
+    color: var(--text);
+    font-family: var(--font);
+    outline: none;
+    width: 110px; text-align: right;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .edit-token-input:focus { border-color: var(--purple2); }
+
+  .modal-btn {
+    width: 100%;
+    padding: 16px;
+    border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.15s;
+    margin-bottom: 8px;
+  }
+
+  .modal-btn.primary {
+    background: var(--purple2);
+    color: white;
+    box-shadow: 0 4px 16px rgba(149,128,255,0.4);
+  }
+  .modal-btn.primary:hover { background: #a190ff; }
+  .modal-btn.primary:active { transform: scale(0.98); }
+
+  .modal-btn.secondary {
+    background: var(--surface);
+    color: var(--text2);
+  }
+  .modal-btn.secondary:hover { background: var(--bg3); }
+
+  /* ── SWAP SCREEN ── */
+  .screen-content {
+    flex: 1; overflow-y: auto; padding: 20px;
+    scrollbar-width: none;
+  }
+  .screen-content::-webkit-scrollbar { display: none; }
+
+  .screen-heading {
+    font-size: 22px; font-weight: 700; color: var(--text);
+    margin-bottom: 20px; letter-spacing: -0.5px;
+  }
+
+  .swap-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .swap-card-label {
+    font-size: 12px; color: var(--text2);
+    font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+
+  .swap-token-row {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .swap-token-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3);
+    border-radius: 20px; padding: 8px 14px 8px 8px;
+    cursor: pointer;
+  }
+
+  .swap-token-pill-icon { font-size: 24px; }
+
+  .swap-token-pill-name {
+    font-size: 15px; font-weight: 600; color: var(--text);
+  }
+
+  .swap-amount-input {
+    flex: 1; background: none; border: none;
+    font-size: 28px; font-weight: 700; color: var(--text);
+    font-family: var(--font); outline: none; text-align: right;
+    -webkit-appearance: none;
+  }
+
+  .swap-arrow {
+    text-align: center; padding: 4px 0; font-size: 20px; color: var(--text2);
+    cursor: pointer; transition: transform 0.2s;
+  }
+  .swap-arrow:hover { transform: rotate(180deg); color: var(--purple); }
+
+  /* ── APPS / SETTINGS / COLLECTIBLES ── */
+  .placeholder-screen {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px; padding: 40px 20px;
+  }
+
+  .placeholder-icon { font-size: 56px; opacity: 0.3; }
+
+  .placeholder-title {
+    font-size: 20px; font-weight: 700; color: var(--text);
+    opacity: 0.4;
+  }
+
+  .placeholder-text {
+    font-size: 14px; color: var(--text2);
+    text-align: center; line-height: 1.6;
+    max-width: 240px;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: absolute;
+    bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white; font-size: 14px; font-weight: 500;
+    padding: 12px 20px; border-radius: 12px;
+    white-space: nowrap; z-index: 500;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── SEND/RECEIVE SCREENS ── */
+  .send-header {
+    display: flex; align-items: center; padding: 16px 20px 8px;
+    gap: 12px;
+  }
+
+  .back-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    border: 1px solid var(--border);
+  }
+
+  .send-title {
+    font-size: 17px; font-weight: 700; color: var(--text);
+  }
+
+  .receive-qr {
+    background: white; border-radius: 20px;
+    width: 200px; height: 200px;
+    margin: 20px auto;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #333; text-align: center; padding: 20px;
+  }
+
+  .address-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 13px; color: var(--text2);
+    font-family: 'SF Mono', 'Courier New', monospace;
+    word-break: break-all;
+    margin: 0 20px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    text-align: center;
+  }
+  .address-box:hover { border-color: var(--purple2); }
+
+  .divider {
+    height: 1px; background: var(--border);
+    margin: 16px 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame" id="phoneFrame">
+  <!-- Dynamic Island -->
+  <div class="dynamic-island"></div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="status-time" id="clock">9:41</div>
+    <div class="status-icons">
+      <!-- Signal -->
+      <svg width="17" height="12" viewBox="0 0 17 12">
+        <rect x="0" y="7" width="3" height="5" rx="0.5" opacity="1"/>
+        <rect x="4.5" y="5" width="3" height="7" rx="0.5" opacity="1"/>
+        <rect x="9" y="2.5" width="3" height="9.5" rx="0.5" opacity="1"/>
+        <rect x="13.5" y="0" width="3" height="12" rx="0.5" opacity="0.3"/>
+      </svg>
+      <!-- WiFi -->
+      <svg width="16" height="12" viewBox="0 0 16 12">
+        <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/>
+        <path d="M2.5 5.5C4 4 5.9 3 8 3s4 1 5.5 2.5" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M0 2.5C2.5 1 5.1 0 8 0s5.5 1 8 2.5" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+        <path d="M5 7.5C5.8 6.7 6.9 6.2 8 6.2s2.2.5 3 1.3" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      </svg>
+      <!-- Battery -->
+      <svg width="25" height="12" viewBox="0 0 25 12">
+        <rect x="0" y="1" width="21" height="10" rx="2.5" stroke="white" stroke-width="1" fill="none" opacity="0.35"/>
+        <rect x="1" y="2" width="18" height="8" rx="1.5" fill="white"/>
+        <rect x="22" y="4" width="3" height="4" rx="1" fill="white" opacity="0.4"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════════ HOME SCREEN ═══════════ -->
+  <div class="screen active" id="screen-home">
+    <div class="home-scroll">
+      <!-- Account header -->
+      <div class="account-header">
+        <div class="account-pill" onclick="showToast('Account switcher coming soon')">
+          <div class="account-avatar">A</div>
+          <span class="account-name">Account 1</span>
+          <span class="account-chevron">⌄</span>
+        </div>
+        <div class="header-icons">
+          <div class="icon-btn" onclick="showToast('QR scanner opened')" title="Scan">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 20h3"/>
+            </svg>
+          </div>
+          <div class="icon-btn" onclick="showToast('Notifications opened')" title="Bell">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Balance -->
+      <div class="balance-section">
+        <div class="balance-label">Total Balance</div>
+        <div class="balance-main" onclick="openEditModal('total')" title="Tap to edit balance">
+          $<span id="totalBalance">12,485.32</span>
+          <span class="balance-edit-icon">✏️</span>
+        </div>
+        <div class="balance-change positive" id="balanceChange">+$234.18 (1.91%) today</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <div class="action-btn" onclick="switchTab('send')">
+          <div class="action-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </div>
+          <span class="action-label">Send</span>
+        </div>
+        <div class="action-btn" onclick="switchTab('receive')">
+          <div class="action-icon outline">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.88 18.09A5 5 0 0018 9h-1.26A8 8 0 103 16.29"/>
+            </svg>
+          </div>
+          <span class="action-label">Receive</span>
+        </div>
+        <div class="action-btn" onclick="switchTab('swap')">
+          <div class="action-icon outline">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/>
+              <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
+            </svg>
+          </div>
+          <span class="action-label">Swap</span>
+        </div>
+        <div class="action-btn" onclick="showToast('Buy crypto with card')">
+          <div class="action-icon outline">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <span class="action-label">Buy</span>
+        </div>
+      </div>
+
+      <!-- Tokens -->
+      <div class="section-header">
+        <span class="section-title">Tokens</span>
+        <span class="section-link" onclick="openEditModal('all')">Edit Balances</span>
+      </div>
+
+      <div class="token-list" id="tokenList">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <!-- NFTs -->
+      <div class="section-header" style="margin-top: 12px;">
+        <span class="section-title">Collectibles</span>
+        <span class="section-link" onclick="switchTab('collectibles')">See all</span>
+      </div>
+
+      <div class="nft-strip">
+        <div class="nft-card" onclick="showToast('Solana Monkey #4291')">🐒</div>
+        <div class="nft-card" onclick="showToast('DeGods #12')">👑</div>
+        <div class="nft-card" onclick="showToast('Mad Lads #882')">🤖</div>
+        <div class="nft-card" onclick="showToast('Okay Bears #5')">🐻</div>
+        <div class="nft-card" onclick="showToast('y00ts #7730')">🦆</div>
+      </div>
+
+      <!-- Activity -->
+      <div class="section-header" style="margin-top: 16px;">
+        <span class="section-title">Recent Activity</span>
+        <span class="section-link" onclick="showToast('Full activity log')">See all</span>
+      </div>
+
+      <div id="activityList"></div>
+
+      <div style="height: 20px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SWAP SCREEN ═══════════ -->
+  <div class="screen" id="screen-swap">
+    <div class="screen-content">
+      <div class="screen-heading">Swap</div>
+
+      <div class="swap-card">
+        <div class="swap-card-label">You pay</div>
+        <div class="swap-token-row">
+          <div class="swap-token-pill" onclick="showToast('Select token')">
+            <span class="swap-token-pill-icon">◎</span>
+            <span class="swap-token-pill-name">SOL</span>
+            <span style="font-size:11px;color:var(--text2);margin-left:4px;">⌄</span>
+          </div>
+          <input class="swap-amount-input" type="number" placeholder="0.00" id="swapFromAmt">
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px;text-align:right;">
+          Balance: <span id="swapFromBal">52.41 SOL</span>
+          <span style="color:var(--purple);margin-left:8px;cursor:pointer;" onclick="document.getElementById('swapFromAmt').value='52.41'">MAX</span>
+        </div>
+      </div>
+
+      <div class="swap-arrow" onclick="showToast('Swapping direction')">⇅</div>
+
+      <div class="swap-card">
+        <div class="swap-card-label">You receive</div>
+        <div class="swap-token-row">
+          <div class="swap-token-pill" onclick="showToast('Select token')">
+            <span class="swap-token-pill-icon">💲</span>
+            <span class="swap-token-pill-name">USDC</span>
+            <span style="font-size:11px;color:var(--text2);margin-left:4px;">⌄</span>
+          </div>
+          <input class="swap-amount-input" type="number" placeholder="0.00" id="swapToAmt" readonly>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px;text-align:right;">
+          1 SOL ≈ 183.24 USDC
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;color:var(--text2);">Rate</span>
+          <span style="font-size:13px;color:var(--text);">1 SOL = 183.24 USDC</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;color:var(--text2);">Network fee</span>
+          <span style="font-size:13px;color:var(--text);">~$0.003</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:13px;color:var(--text2);">Route</span>
+          <span style="font-size:13px;color:var(--purple);">Jupiter ↗</span>
+        </div>
+      </div>
+
+      <button class="modal-btn primary" style="margin-top:20px;" onclick="showToast('Swap executed! (simulation)')">
+        Swap
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ APPS SCREEN ═══════════ -->
+  <div class="screen" id="screen-apps">
+    <div class="placeholder-screen">
+      <div class="placeholder-icon">🧩</div>
+      <div class="placeholder-title">Apps</div>
+      <div class="placeholder-text">Discover dApps built on Solana — DeFi, gaming, NFT marketplaces and more.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════ COLLECTIBLES SCREEN ═══════════ -->
+  <div class="screen" id="screen-collectibles">
+    <div class="screen-content">
+      <div class="screen-heading">Collectibles</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="nft-card" style="width:100%;height:140px;font-size:48px;" onclick="showToast('Solana Monkey #4291')">🐒</div>
+        <div class="nft-card" style="width:100%;height:140px;font-size:48px;" onclick="showToast('DeGods #12')">👑</div>
+        <div class="nft-card" style="width:100%;height:140px;font-size:48px;" onclick="showToast('Mad Lads #882')">🤖</div>
+        <div class="nft-card" style="width:100%;height:140px;font-size:48px;" onclick="showToast('Okay Bears #5')">🐻</div>
+        <div class="nft-card" style="width:100%;height:140px;font-size:48px;" onclick="showToast('y00ts #7730')">🦆</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SETTINGS SCREEN ═══════════ -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-content">
+      <div class="screen-heading">Settings</div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;padding:16px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="showToast('Profile settings')">
+          <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#9580ff,#ff80bf);display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:16px;margin-right:14px;">A</div>
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--text);">Account 1</div>
+            <div style="font-size:12px;color:var(--text2);">5n7m...Xk2p</div>
+          </div>
+          <div style="margin-left:auto;font-size:16px;color:var(--text3);">›</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:16px;">
+        <div style="padding:12px 16px 8px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;">Security</div>
+        <div onclick="showToast('Biometric authentication')" style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;">
+          <span style="font-size:18px;margin-right:14px;">🔒</span>
+          <span style="font-size:15px;color:var(--text);">Biometric Login</span>
+          <span style="margin-left:auto;font-size:16px;color:var(--text3);">›</span>
+        </div>
+        <div onclick="showToast('Change PIN')" style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;">
+          <span style="font-size:18px;margin-right:14px;">🔑</span>
+          <span style="font-size:15px;color:var(--text);">Change PIN</span>
+          <span style="margin-left:auto;font-size:16px;color:var(--text3);">›</span>
+        </div>
+        <div onclick="showToast('Recovery phrase displayed')" style="display:flex;align-items:center;padding:14px 16px;cursor:pointer;">
+          <span style="font-size:18px;margin-right:14px;">📋</span>
+          <span style="font-size:15px;color:var(--text);">Show Recovery Phrase</span>
+          <span style="margin-left:auto;font-size:16px;color:var(--text3);">›</span>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:16px;">
+        <div style="padding:12px 16px 8px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;">Preferences</div>
+        <div onclick="showToast('Currency: USD')" style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;">
+          <span style="font-size:18px;margin-right:14px;">💱</span>
+          <span style="font-size:15px;color:var(--text);">Currency</span>
+          <span style="margin-left:auto;font-size:13px;color:var(--text2);margin-right:6px;">USD</span>
+          <span style="font-size:16px;color:var(--text3);">›</span>
+        </div>
+        <div onclick="showToast('Network: Mainnet')" style="display:flex;align-items:center;padding:14px 16px;cursor:pointer;">
+          <span style="font-size:18px;margin-right:14px;">🌐</span>
+          <span style="font-size:15px;color:var(--text);">Network</span>
+          <span style="margin-left:auto;font-size:13px;color:var(--text2);margin-right:6px;">Mainnet</span>
+          <span style="font-size:16px;color:var(--text3);">›</span>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:20px;">
+        <div style="font-size:13px;color:var(--text3);">Phantom v25.4.1 · Made for education</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SEND SCREEN ═══════════ -->
+  <div class="screen" id="screen-send">
+    <div class="send-header">
+      <div class="back-btn" onclick="switchTab('home')">←</div>
+      <span class="send-title">Send</span>
+    </div>
+    <div class="screen-content">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Recipient address</div>
+        <input class="edit-input" style="padding:14px 16px;" type="text" placeholder="Wallet address or .sol name">
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Token</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="showToast('Select token to send')">
+          <span style="font-size:22px;">◎</span>
+          <span style="font-size:15px;font-weight:600;color:var(--text);">SOL</span>
+          <span style="font-size:13px;color:var(--text2);margin-left:auto;" id="sendBalance">52.41 SOL available</span>
+          <span style="color:var(--text3);">⌄</span>
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;color:var(--text2);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;">Amount</div>
+        <div class="edit-input-wrap">
+          <span class="edit-input-prefix">◎</span>
+          <input class="edit-input" type="number" placeholder="0.00" id="sendAmt">
+        </div>
+      </div>
+      <button class="modal-btn primary" onclick="showToast('Transaction confirmed! (simulation)')">
+        Review Transaction
+      </button>
+      <button class="modal-btn secondary" onclick="switchTab('home')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ RECEIVE SCREEN ═══════════ -->
+  <div class="screen" id="screen-receive">
+    <div class="send-header">
+      <div class="back-btn" onclick="switchTab('home')">←</div>
+      <span class="send-title">Receive</span>
+    </div>
+    <div class="screen-content" style="text-align:center;">
+      <p style="font-size:14px;color:var(--text2);margin-bottom:16px;">Scan this QR code to receive tokens</p>
+      <div class="receive-qr">
+        <!-- Simple SVG QR-like placeholder -->
+        <svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+          <rect width="160" height="160" fill="white"/>
+          <!-- Finder patterns -->
+          <rect x="10" y="10" width="50" height="50" fill="black"/><rect x="18" y="18" width="34" height="34" fill="white"/><rect x="26" y="26" width="18" height="18" fill="black"/>
+          <rect x="100" y="10" width="50" height="50" fill="black"/><rect x="108" y="18" width="34" height="34" fill="white"/><rect x="116" y="26" width="18" height="18" fill="black"/>
+          <rect x="10" y="100" width="50" height="50" fill="black"/><rect x="18" y="108" width="34" height="34" fill="white"/><rect x="26" y="116" width="18" height="18" fill="black"/>
+          <!-- Data modules (decorative) -->
+          <rect x="70" y="10" width="8" height="8" fill="black"/><rect x="82" y="10" width="8" height="8" fill="black"/>
+          <rect x="70" y="22" width="8" height="8" fill="black"/><rect x="70" y="34" width="8" height="8" fill="black"/>
+          <rect x="82" y="34" width="8" height="8" fill="black"/><rect x="70" y="46" width="8" height="8" fill="black"/>
+          <rect x="100" y="70" width="8" height="8" fill="black"/><rect x="112" y="70" width="8" height="8" fill="black"/>
+          <rect x="124" y="70" width="8" height="8" fill="black"/><rect x="136" y="70" width="8" height="8" fill="black"/>
+          <rect x="100" y="82" width="8" height="8" fill="black"/><rect x="124" y="82" width="8" height="8" fill="black"/>
+          <rect x="100" y="94" width="8" height="8" fill="black"/><rect x="112" y="94" width="8" height="8" fill="black"/>
+          <rect x="100" y="106" width="8" height="8" fill="black"/><rect x="136" y="94" width="8" height="8" fill="black"/>
+          <rect x="124" y="106" width="8" height="8" fill="black"/><rect x="136" y="106" width="8" height="8" fill="black"/>
+          <rect x="10" y="70" width="8" height="8" fill="black"/><rect x="22" y="70" width="8" height="8" fill="black"/>
+          <rect x="34" y="70" width="8" height="8" fill="black"/><rect x="46" y="70" width="8" height="8" fill="black"/>
+          <rect x="58" y="70" width="8" height="8" fill="black"/><rect x="10" y="82" width="8" height="8" fill="black"/>
+          <rect x="34" y="82" width="8" height="8" fill="black"/><rect x="46" y="82" width="8" height="8" fill="black"/>
+          <rect x="58" y="82" width="8" height="8" fill="black"/><rect x="22" y="94" width="8" height="8" fill="black"/>
+          <rect x="46" y="94" width="8" height="8" fill="black"/><rect x="70" y="70" width="8" height="8" fill="black"/>
+          <rect x="82" y="70" width="8" height="8" fill="black"/><rect x="70" y="82" width="8" height="8" fill="black"/>
+          <rect x="70" y="94" width="8" height="8" fill="black"/><rect x="82" y="82" width="8" height="8" fill="black"/>
+          <rect x="10" y="106" width="8" height="8" fill="black"/><rect x="34" y="106" width="8" height="8" fill="black"/>
+          <rect x="58" y="106" width="8" height="8" fill="black"/><rect x="70" y="106" width="8" height="8" fill="black"/>
+          <rect x="82" y="94" width="8" height="8" fill="black"/><rect x="22" y="106" width="8" height="8" fill="black"/>
+          <rect x="46" y="106" width="8" height="8" fill="black"/><rect x="82" y="106" width="8" height="8" fill="black"/>
+          <rect x="10" y="118" width="8" height="8" fill="black"/><rect x="22" y="118" width="8" height="8" fill="black"/>
+          <rect x="46" y="118" width="8" height="8" fill="black"/><rect x="70" y="118" width="8" height="8" fill="black"/>
+          <rect x="82" y="118" width="8" height="8" fill="black"/><rect x="34" y="130" width="8" height="8" fill="black"/>
+          <rect x="58" y="130" width="8" height="8" fill="black"/><rect x="70" y="130" width="8" height="8" fill="black"/>
+        </svg>
+      </div>
+      <div class="address-box" onclick="copyAddress()">
+        5n7mBzQwXKr4Gp9aDf2mVhJpLqYtRsEuNkWcXeZk2pQ
+      </div>
+      <p style="font-size:12px;color:var(--text3);margin-top:10px;">Tap address to copy · Solana network</p>
+      <button class="modal-btn primary" style="margin-top:20px;" onclick="copyAddress()">Copy Address</button>
+      <button class="modal-btn secondary" onclick="showToast('Shared!')">Share</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ EDIT BALANCE MODAL ═══════════ -->
+  <div class="modal-overlay" id="editModal" onclick="handleModalOverlayClick(event)">
+    <div class="modal-sheet" id="editSheet">
+      <div class="modal-handle"></div>
+
+      <!-- Mode: total -->
+      <div id="editModeTotal">
+        <div class="modal-title">Edit Total Balance</div>
+        <div class="modal-subtitle">Set your displayed portfolio value</div>
+        <div class="edit-input-wrap">
+          <span class="edit-input-prefix">$</span>
+          <input class="edit-input" type="number" id="totalInput" placeholder="0.00">
+        </div>
+        <button class="modal-btn primary" onclick="saveTotalBalance()">Save Balance</button>
+        <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      </div>
+
+      <!-- Mode: all tokens -->
+      <div id="editModeAll" style="display:none;">
+        <div class="modal-title">Edit Token Balances</div>
+        <div class="modal-subtitle">Adjust individual token amounts</div>
+        <div class="edit-tokens-list" id="editTokensList"></div>
+        <button class="modal-btn primary" onclick="saveAllBalances()">Save Changes</button>
+        <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      </div>
+
+      <!-- Mode: single token -->
+      <div id="editModeSingle" style="display:none;">
+        <div class="modal-title" id="editSingleTitle">Edit Token</div>
+        <div class="modal-subtitle" id="editSingleSubtitle">Set token amount</div>
+        <div class="edit-input-wrap">
+          <span class="edit-input-prefix" id="editSinglePrefix">◎</span>
+          <input class="edit-input" type="number" id="singleInput" placeholder="0.00">
+        </div>
+        <button class="modal-btn primary" onclick="saveSingleBalance()">Save</button>
+        <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ═══════════ TAB BAR ═══════════ -->
+  <div class="tab-bar">
+    <div class="tab-item active" id="tab-home" onclick="switchTab('home')">
+      <div class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+      </div>
+      <span class="tab-label">Home</span>
+    </div>
+    <div class="tab-item" id="tab-swap" onclick="switchTab('swap')">
+      <div class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/>
+          <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
+        </svg>
+      </div>
+      <span class="tab-label">Swap</span>
+    </div>
+    <div class="tab-item" id="tab-apps" onclick="switchTab('apps')">
+      <div class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/>
+        </svg>
+      </div>
+      <span class="tab-label">Apps</span>
+    </div>
+    <div class="tab-item" id="tab-collectibles" onclick="switchTab('collectibles')">
+      <div class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+      <span class="tab-label">Collectibles</span>
+    </div>
+    <div class="tab-item" id="tab-settings" onclick="switchTab('settings')">
+      <div class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5m7.43-2.92c.04-.3.07-.62.07-.96s-.03-.66-.07-1l2.16-1.7c.19-.14.24-.42.12-.64l-2.05-3.55c-.12-.22-.39-.3-.61-.22l-2.55 1.03c-.53-.41-1.1-.75-1.73-1.02L14.5 2.42C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.39 2.6c-.63.27-1.2.61-1.73 1.02L4.84 5.01c-.22-.08-.49 0-.61.22L2.18 8.78c-.12.22-.07.5.12.64L4.46 11.1c-.04.34-.07.67-.07 1s.03.66.07 1L2.3 14.8c-.19.14-.24.42-.12.64l2.05 3.55c.12.22.39.3.61.22l2.55-1.03c.53.41 1.1.75 1.73 1.02l.39 2.6c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.39-2.6c.63-.27 1.2-.61 1.73-1.02l2.55 1.03c.22.08.49 0 .61-.22l2.05-3.55c.12-.22.07-.5-.12-.64l-2.16-1.7z"/>
+        </svg>
+      </div>
+      <span class="tab-label">Settings</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+const state = {
+  totalBalance: 12485.32,
+  tokens: [
+    { id: 'sol',  name: 'Solana',       symbol: 'SOL',  icon: '◎', amount: 52.41,    price: 183.24, change: +2.14 },
+    { id: 'usdc', name: 'USD Coin',     symbol: 'USDC', icon: '💲', amount: 2840.50,  price: 1.00,   change: 0.00 },
+    { id: 'bonk', name: 'Bonk',         symbol: 'BONK', icon: '🐶', amount: 4200000,  price: 0.0000028, change: +5.32 },
+    { id: 'ray',  name: 'Raydium',      symbol: 'RAY',  icon: '⚡', amount: 124.88,   price: 3.72,   change: -1.23 },
+    { id: 'jto',  name: 'Jito',         symbol: 'JTO',  icon: '🔧', amount: 89.20,    price: 4.51,   change: +0.88 },
+    { id: 'wif',  name: 'dogwifhat',    symbol: 'WIF',  icon: '🎩', amount: 310.00,   price: 2.01,   change: +12.4 },
+  ],
+  activity: [
+    { type: 'receive', icon: '↓', title: 'Received SOL',   date: '2 min ago',   amount: '+4.5 SOL',    positive: true },
+    { type: 'send',    icon: '↑', title: 'Sent USDC',      date: '1 hr ago',    amount: '-250 USDC',   positive: false },
+    { type: 'swap',    icon: '⇄', title: 'Swapped SOL → BONK', date: 'Yesterday', amount: '+1,200,000 BONK', positive: true },
+    { type: 'receive', icon: '↓', title: 'Received WIF',   date: 'Mar 12',      amount: '+50 WIF',     positive: true },
+    { type: 'send',    icon: '↑', title: 'Sent SOL',       date: 'Mar 10',      amount: '-2.1 SOL',    positive: false },
+  ]
+};
+
+let editMode = 'total'; // 'total' | 'all' | 'single'
+let editSingleId = null;
+
+// ── CLOCK ──────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ── RENDER ─────────────────────────────────────────────────────────────
+function fmt(n, decimals) {
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return n.toLocaleString('en-US', {maximumFractionDigits: decimals ?? 2});
+  return n.toLocaleString('en-US', {maximumFractionDigits: decimals ?? (n < 1 ? 8 : 4)});
+}
+
+function fmtUSD(n) {
+  return '$' + n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function renderHome() {
+  // Total balance
+  document.getElementById('totalBalance').textContent =
+    state.totalBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+  // Token list
+  const list = document.getElementById('tokenList');
+  list.innerHTML = state.tokens.map(t => {
+    const val = t.amount * t.price;
+    const changeSign = t.change >= 0 ? '+' : '';
+    const changeClass = t.change >= 0 ? 'positive' : 'negative';
+    return `
+      <div class="token-item">
+        <div class="token-icon" style="background:rgba(255,255,255,0.06);">${t.icon}
+          <div class="token-chain-badge">◎</div>
+        </div>
+        <div class="token-info">
+          <div class="token-name">${t.name}</div>
+          <div class="token-amount">${fmt(t.amount)} ${t.symbol}</div>
+        </div>
+        <div class="token-value-wrap">
+          <div class="token-value" onclick="openEditModal('single','${t.id}')" title="Edit balance">
+            <span class="edit-dot"></span>
+            ${fmtUSD(val)}
+          </div>
+          <div class="token-change ${changeClass}">${changeSign}${t.change.toFixed(2)}%</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Send screen balance
+  const sol = state.tokens.find(t => t.id === 'sol');
+  if (sol) document.getElementById('sendBalance').textContent = `${fmt(sol.amount)} SOL available`;
+  if (sol) document.getElementById('swapFromBal').textContent = `${fmt(sol.amount)} SOL`;
+
+  // Activity
+  const actEl = document.getElementById('activityList');
+  actEl.innerHTML = state.activity.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon">${a.icon}</div>
+      <div class="activity-info">
+        <div class="activity-title">${a.title}</div>
+        <div class="activity-date">${a.date}</div>
+      </div>
+      <div class="activity-amount ${a.positive ? 'positive' : 'negative'}">${a.amount}</div>
+    </div>
+  `).join('');
+}
+
+// ── TABS ───────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+
+  const screenId = 'screen-' + name;
+  const tabId = 'tab-' + name;
+
+  const screenEl = document.getElementById(screenId);
+  if (screenEl) screenEl.classList.add('active');
+
+  const tabEl = document.getElementById(tabId);
+  if (tabEl) tabEl.classList.add('active');
+  // send/receive don't have tabs but highlight home
+  else document.getElementById('tab-home').classList.add('active');
+}
+
+// ── EDIT MODALS ────────────────────────────────────────────────────────
+function openEditModal(mode, tokenId) {
+  editMode = mode;
+  editSingleId = tokenId || null;
+
+  document.getElementById('editModeTotal').style.display = 'none';
+  document.getElementById('editModeAll').style.display = 'none';
+  document.getElementById('editModeSingle').style.display = 'none';
+
+  if (mode === 'total') {
+    document.getElementById('editModeTotal').style.display = 'block';
+    document.getElementById('totalInput').value = state.totalBalance;
+    setTimeout(() => document.getElementById('totalInput').focus(), 300);
+
+  } else if (mode === 'all') {
+    document.getElementById('editModeAll').style.display = 'block';
+    const container = document.getElementById('editTokensList');
+    container.innerHTML = state.tokens.map(t => `
+      <div class="edit-token-row">
+        <span class="edit-token-icon">${t.icon}</span>
+        <span class="edit-token-name">${t.symbol}</span>
+        <input class="edit-token-input" type="number" data-id="${t.id}"
+               value="${t.amount}" placeholder="0">
+      </div>
+    `).join('');
+
+  } else if (mode === 'single') {
+    const token = state.tokens.find(t => t.id === tokenId);
+    if (!token) return;
+    document.getElementById('editModeSingle').style.display = 'block';
+    document.getElementById('editSingleTitle').textContent = `Edit ${token.symbol} Balance`;
+    document.getElementById('editSingleSubtitle').textContent = `Current: ${fmt(token.amount)} ${token.symbol}`;
+    document.getElementById('editSinglePrefix').textContent = token.icon;
+    document.getElementById('singleInput').value = token.amount;
+    setTimeout(() => document.getElementById('singleInput').focus(), 300);
+  }
+
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+}
+
+function handleModalOverlayClick(e) {
+  if (e.target === document.getElementById('editModal')) closeModal();
+}
+
+function recalcTotal() {
+  state.totalBalance = state.tokens.reduce((sum, t) => sum + t.amount * t.price, 0);
+}
+
+function saveTotalBalance() {
+  const val = parseFloat(document.getElementById('totalInput').value);
+  if (isNaN(val) || val < 0) { showToast('Please enter a valid amount'); return; }
+  // Scale all token values proportionally
+  const ratio = val / state.totalBalance;
+  state.tokens.forEach(t => { t.amount = t.amount * ratio; });
+  state.totalBalance = val;
+  closeModal();
+  renderHome();
+  showToast('Balance updated!');
+}
+
+function saveAllBalances() {
+  document.querySelectorAll('#editTokensList .edit-token-input').forEach(input => {
+    const id = input.dataset.id;
+    const val = parseFloat(input.value);
+    const token = state.tokens.find(t => t.id === id);
+    if (token && !isNaN(val) && val >= 0) token.amount = val;
+  });
+  recalcTotal();
+  closeModal();
+  renderHome();
+  showToast('All balances updated!');
+}
+
+function saveSingleBalance() {
+  const val = parseFloat(document.getElementById('singleInput').value);
+  if (isNaN(val) || val < 0) { showToast('Please enter a valid amount'); return; }
+  const token = state.tokens.find(t => t.id === editSingleId);
+  if (token) token.amount = val;
+  recalcTotal();
+  closeModal();
+  renderHome();
+  showToast(`${token ? token.symbol : 'Token'} balance updated!`);
+}
+
+// ── UTILITIES ──────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function copyAddress() {
+  const addr = '5n7mBzQwXKr4Gp9aDf2mVhJpLqYtRsEuNkWcXeZk2pQ';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(addr).then(() => showToast('Address copied!'));
+  } else {
+    showToast('Address copied!');
+  }
+}
+
+// Live swap calc
+document.getElementById('swapFromAmt').addEventListener('input', function() {
+  const sol = parseFloat(this.value) || 0;
+  document.getElementById('swapToAmt').value = (sol * 183.24).toFixed(2);
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────
+renderHome();
+</script>
+</body>
+</html>
