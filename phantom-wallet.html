@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Phantom Wallet</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -31,19 +31,6 @@
     font-family: var(--font);
   }
 
-  @media (max-width: 430px), (max-height: 860px) {
-    html, body {
-      align-items: flex-start;
-      background: var(--bg);
-    }
-    .phone-frame {
-      width: 100%;
-      height: 100dvh;
-      border-radius: 0;
-      box-shadow: none;
-    }
-  }
-
   /* iPhone frame */
   .phone-frame {
     width: 393px;
@@ -59,6 +46,19 @@
       inset 0 1px 0 rgba(255,255,255,0.1);
     display: flex;
     flex-direction: column;
+  }
+
+  @media (max-width: 500px), (max-height: 860px) {
+    html, body {
+      align-items: flex-start;
+      background: var(--bg);
+    }
+    .phone-frame {
+      width: 100%;
+      height: 100dvh;
+      border-radius: 0;
+      box-shadow: none;
+    }
   }
 
 
@@ -83,8 +83,15 @@
 
   /* Account header */
   .account-header {
-    padding: 0 20px 0;
+    padding: 16px 20px 0;
     display: flex; align-items: center; justify-content: space-between;
+  }
+
+  @media (max-width: 500px), (max-height: 860px) {
+    .account-header {
+      padding-top: env(safe-area-inset-top, 16px);
+      padding-top: max(env(safe-area-inset-top), 16px);
+    }
   }
 
   .account-pill {
