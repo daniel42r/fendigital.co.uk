@@ -621,24 +621,25 @@ footer a:hover { color: var(--gold); }
     </div>
 
     <div class="contact-form reveal">
-      <h3>Request a Free Quote</h3>
+     <h3>Request a Free Quote</h3>
+      <form action="https://formspree.io/f/xykbyaez" method="POST">
       <div class="form-row">
         <div class="form-group">
           <label>Your Name</label>
-          <input type="text" placeholder="e.g. John Smith">
+          <input type="text" name="name" placeholder="e.g. John Smith">
         </div>
         <div class="form-group">
           <label>Email Address</label>
-          <input type="email" placeholder="john@yourbusiness.co.uk">
+          <input type="email" name="email" placeholder="john@yourbusiness.co.uk">
         </div>
       </div>
       <div class="form-group">
         <label>Your Business</label>
-        <input type="text" placeholder="e.g. Smith's Plumbing, March">
+        <input type="text" name="business" placeholder="e.g. Smith's Plumbing, March">
       </div>
       <div class="form-group">
         <label>What Do You Need?</label>
-        <select>
+        <select name="service">
           <option value="">Select a service...</option>
           <option>Brand new website</option>
           <option>Improve existing website</option>
@@ -648,9 +649,10 @@ footer a:hover { color: var(--gold); }
       </div>
       <div class="form-group">
         <label>Tell Us About Your Business</label>
-        <textarea placeholder="A few lines about what you do and what you're looking for. No need to be technical — plain English is perfect."></textarea>
+        <textarea name="message" placeholder="A few lines about what you do and what you're looking for. No need to be technical — plain English is perfect."></textarea>
       </div>
-      <button class="btn-submit" onclick="alert('Thank you — we\'ll be in touch within 2 hours.')">Send Message →</button>
+      <button type="submit" class="btn-submit">Send Message →</button>
+      </form>
     </div>
   </div>
 </section>
